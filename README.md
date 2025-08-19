@@ -6,10 +6,11 @@ A Go tool that helps you generate AI-powered commit messages by analyzing your s
 
 - **Automatic Git Diff Analysis**: Analyzes staged files and generates git diff output
 - **AI Prompt Generation**: Creates structured prompts for AI assistants to generate commit messages
-- **File Ignoring**: Supports `.gitdiffignore` file to exclude specific files from analysis
-- **Custom Prompts**: Allows custom AI prompts via `.git-commit/prompt.md`
+- **File Ignoring**: Supports `.gitdiffignore` file to exclude specific files from analysis with advanced pattern matching
+- **Custom Prompts**: Allows custom AI prompts via `.git-commit/prompt.md` with intelligent fallback to default prompt
 - **Cross-Platform**: Works on macOS, Linux, and Windows
 - **Clipboard Integration**: Automatically copies the generated prompt to your clipboard
+- **Enhanced Pattern Matching**: Improved wildcard and directory pattern support for file filtering
 
 ## Installation
 
@@ -80,13 +81,15 @@ You are a senior software engineer who specializes in Git...
 EOF
 ```
 
+**Note**: If the custom prompt file is empty or contains only whitespace, the system will automatically use the default prompt.
+
 ## How It Works
 
-1. **Parse Git Diff Ignore**: Reads `.git-commit/ignore` for file patterns to exclude
+1. **Parse Git Diff Ignore**: Reads `.git-commit/ignore` for file patterns to exclude with enhanced wildcard support
 2. **Get Staged Files**: Retrieves files added to git staging area
-3. **Filter Files**: Removes files matching ignore patterns
+3. **Filter Files**: Removes files matching ignore patterns using improved pattern matching
 4. **Generate Diff**: Creates git diff output for remaining files
-5. **Create AI Prompt**: Combines diff with AI instructions
+5. **Create AI Prompt**: Combines diff with AI instructions, using custom prompt if available and valid
 6. **Copy to Clipboard**: Places the complete prompt in clipboard
 7. **Restore Files**: Returns ignored files to staging area
 
@@ -111,12 +114,13 @@ git-commit/
 - `ParseGitDiffIgnore()` - Parses ignore patterns from `.git-commit/ignore`
 - `GetStagedFiles()` - Retrieves staged files from git
 - `GetFilesToIgnore()` - Filters files based on ignore patterns
-- `GetAIPrompt()` - Gets AI prompt (default or custom)
+- `GetAIPrompt()` - Gets AI prompt (default or custom) with intelligent fallback
+- `ParseGitCustomCommit()` - Reads and validates custom prompt from `.git-commit/prompt.md`
 
 ### Utility Functions
 
-- `GlobMatch()` - Pattern matching for file paths
-- `CopyToClipboard()` - Cross-platform clipboard copying
+- `GlobMatch()` - Enhanced pattern matching for file paths with wildcard and directory support
+- `CopyToClipboard()` - Cross-platform clipboard copying with error handling
 
 ## Contributing
 
@@ -140,6 +144,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - File ignoring functionality
 - Cross-platform clipboard support
 - Custom prompt support
+- Enhanced pattern matching with wildcard support
+- Improved custom prompt handling with intelligent fallback
+- Comprehensive test coverage
 
 ## Support
 

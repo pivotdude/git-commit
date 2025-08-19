@@ -9,33 +9,33 @@ import (
 
 // GlobMatch checks if a path matches a pattern (simplified implementation)
 func GlobMatch(pattern, path string) bool {
-	// If the pattern ends with /, it's a directory
+	// Handle wildcard (*) matching first.
+	if strings.Contains(pattern, "*") {
+		// This simplified logic handles a single wildcard '*' at the beginning, middle, or end.
+		// It splits the pattern by the wildcard.
+		parts := strings.Split(pattern, "*")
+		if len(parts) == 2 {
+			// If pattern is "*.go", parts are ["", ".go"]. Path must have an empty prefix and a ".go" suffix.
+			// If pattern is "test.*", parts are ["test.", ""]. Path must have a "test." prefix and an empty suffix.
+			// If pattern is "test*.log", parts are ["test", ".log"]. Path must have a "test" prefix and a ".log" suffix.
+			return strings.HasPrefix(path, parts[0]) && strings.HasSuffix(path, parts[1])
+		}
+		// Note: This simplified implementation does not handle multiple wildcards like "test*/*.go".
+	}
+
+	// If the pattern ends with /, it's a directory pattern.
 	if strings.HasSuffix(pattern, "/") {
-		// Check if the path is in this directory
+		// Check if the path is the directory itself or a file/subdir within it.
 		return strings.HasPrefix(path, pattern) || path == strings.TrimSuffix(pattern, "/")
 	}
-	
-	// If the pattern doesn't contain separator characters (/, \), consider it a directory
+
+	// If the pattern doesn't contain path separators, treat it as a directory name.
 	if !strings.ContainsAny(pattern, "/\\") {
-		// Check if the path is a file in this directory or the directory itself
-		return strings.HasPrefix(path, pattern+"/") || path == pattern || strings.HasPrefix(path, pattern+"/")
+		// Check if the path is the directory itself or a file within that directory.
+		return strings.HasPrefix(path, pattern+"/") || path == pattern
 	}
-	
-	// If the pattern contains *, it's a wildcard
-	if strings.Contains(pattern, "*") {
-		// Simple implementation for * at the end (e.g., *.log)
-		if strings.HasSuffix(pattern, "*") {
-			prefix := strings.TrimSuffix(pattern, "*")
-			return strings.HasPrefix(path, prefix)
-		}
-		// Simple implementation for * at the beginning (e.g., *.log)
-		if strings.HasPrefix(pattern, "*") {
-			suffix := strings.TrimPrefix(pattern, "*")
-			return strings.HasSuffix(path, suffix)
-		}
-	}
-	
-	// Simple exact match
+
+	// Fallback to simple exact match.
 	return pattern == path
 }
 
