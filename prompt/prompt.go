@@ -61,8 +61,20 @@ func ParseGitCustomCommit() (string, error) {
 }
 
 // GetAIPrompt returns the AI prompt (standard or custom)
-func GetAIPrompt() string {
-	// Try to read the custom prompt
+func GetAIPrompt(promptName string) string {
+	// If a specific prompt name is provided, try to load it from custom-instructions
+	if promptName != "" {
+		customPrompt, err := loadCustomPrompt(promptName)
+		if err != nil {
+			fmt.Printf("Error reading custom prompt '%s': %v, using standard\n", promptName, err)
+			return defaultAIPrompt
+		}
+		if strings.TrimSpace(customPrompt) != "" {
+			return customPrompt
+		}
+	}
+
+	// Try to read the default custom prompt
 	customPrompt, err := ParseGitCustomCommit()
 	if err != nil {
 		fmt.Printf("Error reading custom prompt: %v, using standard\n", err)
@@ -75,4 +87,23 @@ func GetAIPrompt() string {
 	}
 
 	return customPrompt
+}
+
+// loadCustomPrompt loads a custom prompt from the custom-instructions folder
+func loadCustomPrompt(promptName string) (string, error) {
+	// Construct the path to the custom prompt file
+	customPromptPath := fmt.Sprintf(".git-commit/custom-instructions/%s.md", promptName)
+	
+	// Check if the file exists
+	if _, err := os.Stat(customPromptPath); os.IsNotExist(err) {
+		return "", fmt.Errorf("custom prompt file '%s' not found", customPromptPath)
+	}
+
+	// Read the file content
+	content, err := os.ReadFile(customPromptPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read custom prompt file '%s': %v", customPromptPath, err)
+	}
+
+	return string(content), nil
 }

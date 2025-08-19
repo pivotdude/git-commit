@@ -8,6 +8,8 @@ A Go tool that helps you generate AI-powered commit messages by analyzing your s
 - **AI Prompt Generation**: Creates structured prompts for AI assistants to generate commit messages
 - **File Ignoring**: Supports `.gitdiffignore` file to exclude specific files from analysis with advanced pattern matching
 - **Custom Prompts**: Allows custom AI prompts via `.git-commit/prompt.md` with intelligent fallback to default prompt
+- **Multiple Custom Prompt Support**: Supports multiple custom prompts in `.git-commit/custom-instructions/` directory
+- **Command Line Interface**: Enhanced CLI with flags for various operations
 - **Cross-Platform**: Works on macOS, Linux, and Windows
 - **Clipboard Integration**: Automatically copies the generated prompt to your clipboard
 - **Enhanced Pattern Matching**: Improved wildcard and directory pattern support for file filtering
@@ -33,6 +35,8 @@ go build -o git-commit
 go run main.go
 ```
 
+````
+
 ## Usage
 
 ### Basic Usage
@@ -55,6 +59,24 @@ go run main.go
    - Create an AI prompt with the diff
    - Copy the prompt to your clipboard
 
+### Command Line Options
+
+```bash
+git-commit [prompt-name]  Generate AI prompt with git diff and copy to clipboard
+git-commit -h             Show help message
+git-commit -v             Enable verbose output
+git-commit -generate-prompt  Generate prompt for current changes
+```
+
+### Examples
+
+```bash
+git-commit              # Generate prompt and copy to clipboard
+git-commit mark         # Use custom prompt from custom-instructions/mark.md
+git-commit -v           # Run with verbose logging
+git-commit -generate-prompt  # Generate prompt without copying to clipboard
+```
+
 ### Configuration
 
 #### Ignoring Files
@@ -68,9 +90,9 @@ echo "*.log" >> .git-commit/ignore
 echo "temp" >> .git-commit/ignore
 ```
 
-#### Custom AI Prompts
+#### Default Custom AI Prompt
 
-Create a custom AI prompt by creating `.git-commit/prompt.md`:
+Create a default custom AI prompt by creating `.git-commit/prompt.md`:
 
 ```bash
 mkdir -p .git-commit
@@ -79,6 +101,23 @@ You are a senior software engineer who specializes in Git...
 
 [Your custom prompt here]
 EOF
+```
+
+#### Multiple Custom Prompts
+
+Create multiple custom prompts by adding `.md` files to `.git-commit/custom-instructions/`:
+
+```bash
+mkdir -p .git-commit/custom-instructions
+cat > .git-commit/custom-instructions/mark.md << EOF
+You must update the README.md file with the latest information about your project. Please update the file.
+EOF
+```
+
+Use custom prompts by specifying their name:
+
+```bash
+git-commit mark
 ```
 
 **Note**: If the custom prompt file is empty or contains only whitespace, the system will automatically use the default prompt.
@@ -136,6 +175,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.1.0
+
+- Added command line interface with flags
+- Implemented multiple custom prompt support
+- Added verbose mode for debugging
+- Added generate-prompt mode for viewing without clipboard copy
+- Enhanced help system with examples
+- Added automatic detection of available custom prompts
+- Improved error handling and user feedback
+
 ### v1.0.0
 
 - Initial release
@@ -161,3 +210,4 @@ If you encounter any issues or have questions:
 - Built with Go programming language
 - Uses standard git command-line interface
 - Inspired by modern AI-assisted development workflows
+````

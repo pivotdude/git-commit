@@ -137,7 +137,7 @@ This is a custom prompt for testing.`
 		t.Fatalf("Failed to create custom prompt file: %v", err)
 	}
 	
-	result := GetAIPrompt()
+	result := GetAIPrompt("")
 	if result != customContent {
 		t.Errorf("Expected custom prompt, got default prompt")
 	}
@@ -152,7 +152,7 @@ func TestGetAIPrompt_CustomPromptEmpty(t *testing.T) {
 		t.Fatalf("Failed to create empty custom prompt file: %v", err)
 	}
 	
-	result := GetAIPrompt()
+	result := GetAIPrompt("")
 	if result != defaultAIPrompt {
 		t.Errorf("Expected default prompt, got custom prompt")
 	}
@@ -168,7 +168,7 @@ func TestGetAIPrompt_CustomPromptWhitespaceOnly(t *testing.T) {
 		t.Fatalf("Failed to create whitespace-only custom prompt file: %v", err)
 	}
 	
-	result := GetAIPrompt()
+	result := GetAIPrompt("")
 	if result != defaultAIPrompt {
 		t.Errorf("Expected default prompt, got custom prompt")
 	}
@@ -180,7 +180,7 @@ func TestGetAIPrompt_NoCustomPromptFile(t *testing.T) {
 	// Ensure .git-commit/prompt.md doesn't exist
 	os.Remove(".git-commit/prompt.md")
 	
-	result := GetAIPrompt()
+	result := GetAIPrompt("")
 	if result != defaultAIPrompt {
 		t.Errorf("Expected default prompt, got something else")
 	}
@@ -195,7 +195,7 @@ func TestGetAIPrompt_CustomPromptReadError(t *testing.T) {
 		t.Fatalf("Failed to create directory instead of file: %v", err)
 	}
 	
-	result := GetAIPrompt()
+	result := GetAIPrompt("")
 	if result != defaultAIPrompt {
 		t.Errorf("Expected default prompt on read error, got something else")
 	}
