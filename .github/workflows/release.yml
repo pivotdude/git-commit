@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24.6'
+    
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+    
+    - name: Build Linux amd64
+      run: |
+        mkdir -p dist
+        GOOS=linux GOARCH=amd64 go build -v -o dist/git-commit-message-linux-amd64 ./main.go
+    
+    - name: Build Linux arm64
+      run: |
+        GOOS=linux GOARCH=arm64 go build -v -o dist/git-commit-message-linux-arm64 ./main.go
+    
+    - name: Build Windows amd64
+      run: |
+        GOOS=windows GOARCH=amd64 go build -v -o dist/git-commit-message-windows-amd64.exe ./main.go
+    
+    - name: Build macOS amd64
+      run: |
+        GOOS=darwin GOARCH=amd64 go build -v -o dist/git-commit-message-macos-amd64 ./main.go
+    
+    - name: Build macOS arm64
+      run: |
+        GOOS=darwin GOARCH=arm64 go build -v -o dist/git-commit-message-macos-arm64 ./main.go
+    
+    - name: Create checksums
+      run: |
+        cd dist
+        sha256sum * > checksums.txt
+    
+    - name: Upload binaries to release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: dist/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
