@@ -8,9 +8,9 @@ import (
 	"os/exec"
 	"strings"
 
-	"git-commit-message/git"
-	"git-commit-message/prompt"
-	"git-commit-message/utils"
+	"git-commit/git"
+	"git-commit/prompt"
+	"git-commit/utils"
 )
 
 func main() {

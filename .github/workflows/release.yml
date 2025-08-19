@@ -28,23 +28,23 @@ jobs:
     - name: Build Linux amd64
       run: |
         mkdir -p dist
-        GOOS=linux GOARCH=amd64 go build -v -o dist/git-commit-message-linux-amd64 ./main.go
+        GOOS=linux GOARCH=amd64 go build -v -o dist/git-commit-linux-amd64 ./main.go
     
     - name: Build Linux arm64
       run: |
-        GOOS=linux GOARCH=arm64 go build -v -o dist/git-commit-message-linux-arm64 ./main.go
+        GOOS=linux GOARCH=arm64 go build -v -o dist/git-commit-linux-arm64 ./main.go
     
     - name: Build Windows amd64
       run: |
-        GOOS=windows GOARCH=amd64 go build -v -o dist/git-commit-message-windows-amd64.exe ./main.go
+        GOOS=windows GOARCH=amd64 go build -v -o dist/git-commit-windows-amd64.exe ./main.go
     
     - name: Build macOS amd64
       run: |
-        GOOS=darwin GOARCH=amd64 go build -v -o dist/git-commit-message-macos-amd64 ./main.go
+        GOOS=darwin GOARCH=amd64 go build -v -o dist/git-commit-macos-amd64 ./main.go
     
     - name: Build macOS arm64
       run: |
-        GOOS=darwin GOARCH=arm64 go build -v -o dist/git-commit-message-macos-arm64 ./main.go
+        GOOS=darwin GOARCH=arm64 go build -v -o dist/git-commit-macos-arm64 ./main.go
     
     - name: Create checksums
       run: |

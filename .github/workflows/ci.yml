@@ -30,7 +30,7 @@ jobs:
           ${{ runner.os }}-go-
     
     - name: Build
-      run: go build -v -o git-commit-message ./main.go
+      run: go build -v -o git-commit ./main.go
     
     - name: Test
       run: go test -v ./...

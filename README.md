@@ -23,10 +23,10 @@ A Go tool that helps you generate AI-powered commit messages by analyzing your s
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd git-commit-message
+cd git-commit
 
 # Build the application
-go build -o git-commit-message
+go build -o git-commit
 
 # Or run directly
 go run main.go
@@ -45,7 +45,7 @@ go run main.go
 2. Run the tool:
 
    ```bash
-   ./git-commit-message
+   ./git-commit
    ```
 
 3. The tool will:
@@ -93,7 +93,7 @@ EOF
 ## Project Structure
 
 ```
-git-commit-message/
+git-commit/
 ├── main.go              # Main application entry point
 ├── go.mod               # Go module file
 ├── git/                 # Git-related functionality

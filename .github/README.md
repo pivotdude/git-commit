@@ -1,4 +1,4 @@
-# GitHub Actions for building git-commit-message
+# GitHub Actions for building git-commit
 
 ## CI Workflow (`.github/workflows/ci.yml`)
 
@@ -9,7 +9,7 @@
 **What it does:**
 - Sets up Go 1.24.6
 - Caches Go modules for faster builds
-- Builds the application: `go build -v -o git-commit-message ./main.go`
+- Builds the application: `go build -v -o git-commit ./main.go`
 - Runs tests: `go test -v ./...`
 
 ## Release Workflow (`.github/workflows/release.yml`)
@@ -37,11 +37,11 @@ After publishing the release, the build will automatically start and binaries wi
 
 ## Final files in the release:
 
-- `git-commit-message-linux-amd64` - Linux 64-bit Intel
-- `git-commit-message-linux-arm64` - Linux ARM64
-- `git-commit-message-windows-amd64.exe` - Windows 64-bit
-- `git-commit-message-macos-amd64` - macOS Intel 64-bit
-- `git-commit-message-macos-arm64` - macOS Apple Silicon
+- `git-commit-linux-amd64` - Linux 64-bit Intel
+- `git-commit-linux-arm64` - Linux ARM64
+- `git-commit-windows-amd64.exe` - Windows 64-bit
+- `git-commit-macos-amd64` - macOS Intel 64-bit
+- `git-commit-macos-arm64` - macOS Apple Silicon
 - `checksums.txt` - SHA256 checksums
 
 Dockerfile is NOT required for these builds, as native Go compilation is used.
