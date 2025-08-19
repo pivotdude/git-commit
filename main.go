@@ -1,95 +1,106 @@
 package main
 
 import (
-    "bytes"
-    "fmt"
-    "log"
-    "os"
-    "os/exec"
-    "runtime"
-    "strings"
+	"bytes"
+	"fmt"
+	"log"
+	"os"
+	"os/exec"
+	"strings"
+
+	"git-commit-message/git"
+	"git-commit-message/prompt"
+	"git-commit-message/utils"
 )
 
-const aiPrompt = `
-You are a senior software engineer who specializes in Git. Your task is to generate a branch name and a commit message based on the provided code changes (git diff). Follow these rules:
-1.  **Branch Name:**
-    * Use a lowercase, hyphen-separated format (e.g., 'feature/add-login-button').
-    * Start with a prefix indicating the type of change:
-        * 'feature/' for new features.
-        * 'fix/' for bug fixes.
-        * 'hotfix/' for critical bug fixes.
-        * 'refactor/' for code refactoring.
-        * 'chore/' for routine tasks or maintenance.
-        * 'docs/' for documentation changes.
-    * The name should be concise and clearly describe the change.
-2.  **Commit Message:**
-    * Follow the Conventional Commits specification.
-    * **Subject Line:**
-        * Start with a type prefix (e.g., 'feat', 'fix', 'refactor', 'chore', 'docs', 'perf').
-        * Use imperative, present tense: "Add," not "Added" or "Adds."
-        * Keep it brief (under 50 characters).
-        * Use a lowercase letter for the first word.
-    * **Body (optional):**
-        * Provide a more detailed explanation of the change. Explain the "what" and "why," not the "how."
-        * Separate the subject from the body with a blank line.
-    * **Footer (optional):**
-        * Include a reference to a bug or issue tracker (e.g., 'Closes #123', 'Fixes #456').
-3.  **Output Format:**
-    * Provide the branch name and commit message separately, formatted as follows:
-
-Branch Name: <generated_branch_name>
-Commit Message:
-<generated_commit_message>
-
-**Here is the 'git diff' output to analyze:**`
-
 func main() {
-    // Get staged git diff
-    cmd := exec.Command("git", "diff", "--staged")
-    var stdout, stderr bytes.Buffer
-    cmd.Stdout = &stdout
-    cmd.Stderr = &stderr
-    err := cmd.Run()
+	// 1. Read the .gitdiffignore file and get ignore patterns
+	patterns, err := git.ParseGitDiffIgnore()
+	if err != nil {
+		log.Fatalf("Error reading .gitdiffignore: %v", err)
+	}
+	// Log the obtained patterns
+	log.Printf("Obtained patterns from .gitdiffignore: %v", patterns)
 
-    if err != nil {
-        log.Fatalf("Error running git diff: %v\n%s", err, stderr.String())
-    }
+	// 2. Get the list of staged files
+	stagedFiles, err := git.GetStagedFiles()
+	if err != nil {
+		log.Fatalf("Error getting staged files: %v", err)
+	}
 
-    diffOutput := strings.TrimSpace(stdout.String())
-    if diffOutput == "" {
-        fmt.Println("No changes detected. Please use 'git add' to stage files.")
-        os.Exit(1)
-    }
+// Log the list of staged files
+	log.Printf("Found staged files: %v", stagedFiles)
 
-    finalPrompt := fmt.Sprintf("%s\n<diff>\n%s\n</diff>", aiPrompt, diffOutput)
-    copyToClipboard(finalPrompt)
-    fmt.Println("AI prompt with git diff has been copied to clipboard.")
-}
+	// 3. Determine files that need to be ignored
+	filesToIgnore := git.GetFilesToIgnore(patterns, stagedFiles)
+	log.Printf("Files to ignore: %v", filesToIgnore)
 
-func copyToClipboard(text string) {
-    var cmd *exec.Cmd
+	// 4. Remove ignored files from staged
+	if len(filesToIgnore) > 0 {
+		fmt.Printf("Removing %d files from staged to ignore:\n", len(filesToIgnore))
+		for _, file := range filesToIgnore {
+			fmt.Printf("  - %s\n", file)
+		}
 
-    switch runtime.GOOS {
-    case "darwin":
-        cmd = exec.Command("pbcopy")
-    case "linux":
-        if _, err := exec.LookPath("xclip"); err == nil {
-            cmd = exec.Command("xclip", "-selection", "clipboard")
-        } else if _, err := exec.LookPath("xsel"); err == nil {
-            cmd = exec.Command("xsel", "--clipboard", "--input")
-        }
-    case "windows":
-        cmd = exec.Command("clip")
-    }
+		err = git.RemoveFilesFromStaged(filesToIgnore)
+		if err != nil {
+			log.Fatalf("Error removing files from staged: %v", err)
+		}
+	}
 
-    if cmd == nil {
-        fmt.Printf("Clipboard utility not found. Please copy manually:\n---\n%s\n---\n", text)
-        return
-    }
+	// 5. Perform main work - get git diff
+	cmd := exec.Command("git", "diff", "--staged")
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err = cmd.Run()
 
-    cmd.Stdin = strings.NewReader(text)
-    if err := cmd.Run(); err != nil {
-        fmt.Printf("Clipboard copy error: %v\n", err)
-        fmt.Printf("Please copy manually:\n---\n%s\n---\n", text)
-    }
+	if err != nil {
+		// If an error occurred, return the ignored files back to staged
+		if len(filesToIgnore) > 0 {
+			fmt.Println("An error occurred, returning files back to staged...")
+			addErr := git.AddFilesToStaged(filesToIgnore)
+			if addErr != nil {
+				log.Printf("Error returning files to staged: %v", addErr)
+			}
+		}
+		log.Fatalf("Error executing git diff: %v\n%s", err, stderr.String())
+	}
+
+	diffOutput := strings.TrimSpace(stdout.String())
+	if diffOutput == "" {
+		// If there are no changes, return the ignored files back to staged
+		if len(filesToIgnore) > 0 {
+			fmt.Println("No changes found, returning files back to staged...")
+			addErr := git.AddFilesToStaged(filesToIgnore)
+			if addErr != nil {
+				log.Printf("Error returning files to staged: %v", addErr)
+			}
+		}
+		fmt.Println("No changes detected. Please use 'git add' to add files to staged.")
+		os.Exit(1)
+	}
+
+	// 6. Get AI prompt (standard or custom)
+	aiPrompt := prompt.GetAIPrompt()
+
+	// 7. Copy the result to clipboard (first diff, then prompt)
+	finalPrompt := fmt.Sprintf("<diff>\n%s\n</diff>\n\n%s", diffOutput, aiPrompt)
+	utils.CopyToClipboard(finalPrompt)
+	fmt.Println("AI prompt with git diff copied to clipboard.")
+
+	// 8. Return ignored files back to staged
+	if len(filesToIgnore) > 0 {
+		fmt.Printf("Returning %d files to staged:\n", len(filesToIgnore))
+		for _, file := range filesToIgnore {
+			fmt.Printf("  + %s\n", file)
+		}
+
+		err = git.AddFilesToStaged(filesToIgnore)
+		if err != nil {
+			log.Printf("Error returning files to staged: %v", err)
+		} else {
+			fmt.Println("Files successfully returned to staged.")
+		}
+	}
 }
