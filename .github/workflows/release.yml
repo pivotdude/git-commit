@@ -17,9 +17,6 @@ jobs:
         with:
           go-version: "1.24.6"
 
-      - name: Download dependencies
-        run: go mod download
-
       - name: Debug project structure
         run: |
           echo "=== Current directory ==="
