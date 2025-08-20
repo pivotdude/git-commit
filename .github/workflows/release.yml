@@ -13,32 +13,9 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v4
         with:
           go-version: "1.21"
-
-      - name: Cache Go modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
-      - name: Debug project structure
-        run: |
-          echo "Current directory:"
-          pwd
-          echo "Project structure:"
-          ls -la
-          echo "cmd directory:"
-          ls -la cmd/
-          echo "git-commit directory:"
-          ls -la cmd/git-commit/
-          echo "Go mod:"
-          cat go.mod
 
       - name: Download dependencies
         run: go mod download
