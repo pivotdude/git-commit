@@ -1,5 +1,4 @@
 name: Release
-
 on:
   release:
     types: [published]
@@ -8,15 +7,18 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: "1.24.6"
+          go-version: "1.21"
 
       - name: Cache Go modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/go-build
@@ -25,35 +27,56 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
+      - name: Debug project structure
+        run: |
+          echo "Current directory:"
+          pwd
+          echo "Project structure:"
+          ls -la
+          echo "cmd directory:"
+          ls -la cmd/
+          echo "git-commit directory:"
+          ls -la cmd/git-commit/
+          echo "Go mod:"
+          cat go.mod
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Create dist directory
+        run: mkdir -p dist
+
       - name: Build Linux amd64
         run: |
-          mkdir -p dist
-          GOOS=linux GOARCH=amd64 go build -v -o dist/git-commit-linux-amd64 ./cmd/git-commit/main.go
+          GOOS=linux GOARCH=amd64 go build -v -ldflags="-s -w" -o dist/git-commit-linux-amd64 ./cmd/git-commit
 
       - name: Build Linux arm64
         run: |
-          GOOS=linux GOARCH=arm64 go build -v -o dist/git-commit-linux-arm64 ./cmd/git-commit/main.go
+          GOOS=linux GOARCH=arm64 go build -v -ldflags="-s -w" -o dist/git-commit-linux-arm64 ./cmd/git-commit
 
       - name: Build Windows amd64
         run: |
-          GOOS=windows GOARCH=amd64 go build -v -o dist/git-commit-windows-amd64.exe ./cmd/git-commit/main.go
+          GOOS=windows GOARCH=amd64 go build -v -ldflags="-s -w" -o dist/git-commit-windows-amd64.exe ./cmd/git-commit
 
       - name: Build macOS amd64
         run: |
-          GOOS=darwin GOARCH=amd64 go build -v -o dist/git-commit-macos-amd64 ./cmd/git-commit/main.go
+          GOOS=darwin GOARCH=amd64 go build -v -ldflags="-s -w" -o dist/git-commit-macos-amd64 ./cmd/git-commit
 
       - name: Build macOS arm64
         run: |
-          GOOS=darwin GOARCH=arm64 go build -v -o dist/git-commit-macos-arm64 ./cmd/git-commit/main.go
+          GOOS=darwin GOARCH=arm64 go build -v -ldflags="-s -w" -o dist/git-commit-macos-arm64 ./cmd/git-commit
 
       - name: Create checksums
         run: |
           cd dist
           sha256sum * > checksums.txt
+          echo "Created checksums:"
+          cat checksums.txt
 
       - name: Upload binaries to release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: dist/*
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
