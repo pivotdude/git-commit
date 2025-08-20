@@ -15,10 +15,31 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.21"
+          go-version: "1.24.6"
 
       - name: Download dependencies
         run: go mod download
+
+      - name: Debug project structure
+        run: |
+          echo "=== Current directory ==="
+          pwd
+          ls -la
+
+          echo "=== Go module info ==="
+          cat go.mod
+
+          echo "=== cmd directory ==="
+          ls -la cmd/
+
+          echo "=== git-commit directory ==="  
+          ls -la cmd/git-commit/
+
+          echo "=== main.go content preview ==="
+          head -10 cmd/git-commit/main.go
+
+          echo "=== Test build ==="
+          go build -v ./cmd/git-commit
 
       - name: Create dist directory
         run: mkdir -p dist
