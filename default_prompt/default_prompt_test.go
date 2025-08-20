@@ -1,4 +1,4 @@
-package prompt
+package defaultprompt
 
 import (
 	"os"
@@ -61,7 +61,7 @@ Example: feat(auth): add login functionality
 		t.Fatalf("Failed to create custom prompt file: %v", err)
 	}
 	
-	result, err := ParseGitCustomCommit()
+	result, err := parseGitCustomCommitMessage()
 	if err != nil {
 		t.Fatalf("ParseGitCustomCommit() error = %v", err)
 	}
@@ -77,7 +77,7 @@ func TestParseGitCustomCommit_FileDoesNotExist(t *testing.T) {
 	// Ensure .git-commit/prompt.md doesn't exist
 	os.Remove(".git-commit/prompt.md")
 	
-	result, err := ParseGitCustomCommit()
+	result, err := parseGitCustomCommitMessage()
 	if err != nil {
 		t.Fatalf("ParseGitCustomCommit() error = %v", err)
 	}
@@ -96,7 +96,7 @@ func TestParseGitCustomCommit_EmptyFile(t *testing.T) {
 		t.Fatalf("Failed to create empty prompt file: %v", err)
 	}
 	
-	result, err := ParseGitCustomCommit()
+	result, err := parseGitCustomCommitMessage()
 	if err != nil {
 		t.Fatalf("ParseGitCustomCommit() error = %v", err)
 	}
@@ -116,7 +116,7 @@ func TestParseGitCustomCommit_WhitespaceOnly(t *testing.T) {
 		t.Fatalf("Failed to create whitespace-only prompt file: %v", err)
 	}
 	
-	result, err := ParseGitCustomCommit()
+	result, err := parseGitCustomCommitMessage()
 	if err != nil {
 		t.Fatalf("ParseGitCustomCommit() error = %v", err)
 	}

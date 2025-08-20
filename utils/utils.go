@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -49,7 +50,8 @@ func CopyToClipboard(text string) {
 	case "linux":
 		if _, err := exec.LookPath("xclip"); err == nil {
 			cmd = exec.Command("xclip", "-selection", "clipboard")
-		} else if _, err := exec.LookPath("xsel"); err == nil {
+			fmt.Println("Using xclip for clipboard")
+			} else if _, err := exec.LookPath("xsel"); err == nil {
 			cmd = exec.Command("xsel", "--clipboard", "--input")
 		}
 	case "windows":
@@ -71,4 +73,21 @@ func CopyToClipboard(text string) {
 // Printf - simplified output function
 func printf(format string, a ...interface{}) {
 	fmt.Printf(format, a...)
+}
+
+
+// readFileContent reads and returns the content of a file
+func ReadFileContent(filePath string) (string, error) {
+	// Check if the file exists
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return "", fmt.Errorf("file not found")
+	}
+
+	// Read the file content
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read file: %v", err)
+	}
+
+	return string(content), nil
 }

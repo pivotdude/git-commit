@@ -2,94 +2,57 @@ package prompt
 
 import (
 	"fmt"
+	"git-commit/diff"
+	"git-commit/utils"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
-const defaultAIPrompt = `You are a senior software engineer who specializes in Git. Your task is to generate a branch name and a commit message based on the provided code changes (git diff). Follow these rules:
-1.  **Branch Name:**
-    * Use a lowercase, hyphen-separated format (e.g., 'feature/add-login-button').
-    * Start with a prefix indicating the type of change:
-        * 'feature/' for new features.
-        * 'fix/' for bug fixes.
-        * 'hotfix/' for critical bug fixes.
-        * 'refactor/' for code refactoring.
-        * 'chore/' for routine tasks or maintenance.
-        * 'docs/' for documentation changes.
-    * The name should be concise and clearly describe the change.
-2.  **Commit Message:**
-    * Follow the Conventional Commits specification.
-    * **Subject Line:**
-        * Start with a type prefix (e.g., 'feat', 'fix', 'refactor', 'chore', 'docs', 'perf').
-        * Use imperative, present tense: "Add," not "Added" or "Adds."
-        * Keep it brief (under 50 characters).
-        * Use a lowercase letter for the first word.
-    * **Body (optional):**
-        * Provide a more detailed explanation of the change. Explain the "what" and "why," not the "how."
-        * Separate the subject from the body with a blank line.
-    * **Footer (optional):**
-        * Include a reference to a bug or issue tracker (e.g., 'Closes #123', 'Fixes #456').
-3.  **Output Format:**
-    * Provide the branch name and commit message separately, formatted as follows:
-
-Branch Name: <generated_branch_name>
-Commit Message:
-<generated_commit_message>`
-
-// ParseGitCustomCommit reads the prompt.md file from .git-commit and returns a custom prompt
-func ParseGitCustomCommit() (string, error) {
-	// Check if the prompt.md file exists in the .git-commit folder
-	if _, err := os.Stat(".git-commit/prompt.md"); os.IsNotExist(err) {
-		// If the file doesn't exist, return an empty string
-		return "", nil
-	}
-
-	// Open the file for reading
-	file, err := os.Open(".git-commit/prompt.md")
-	if err != nil {
-		return "", fmt.Errorf("failed to open file .git-commit/prompt.md: %v", err)
-	}
-	defer file.Close()
-
-	// Read the entire file into a string
-	content, err := os.ReadFile(".git-commit/prompt.md")
-	if err != nil {
-		return "", fmt.Errorf("error reading file .git-commit/prompt.md: %v", err)
-	}
-
-	return string(content), nil
-}
-
-// GetAIPrompt returns the AI prompt (standard or custom)
-func GetAIPrompt(promptName string) string {
-	// If a specific prompt name is provided, try to load it from custom-instructions
-	if promptName != "" {
-		customPrompt, err := loadCustomPrompt(promptName)
-		if err != nil {
-			fmt.Printf("Error reading custom prompt '%s': %v, using standard\n", promptName, err)
-			return defaultAIPrompt
-		}
-		if strings.TrimSpace(customPrompt) != "" {
-			return customPrompt
-		}
-	}
-
-	// Try to read the default custom prompt
-	customPrompt, err := ParseGitCustomCommit()
-	if err != nil {
-		fmt.Printf("Error reading custom prompt: %v, using standard\n", err)
-		return defaultAIPrompt
-	}
-
-	// If the custom prompt is empty, use the standard one
-	if strings.TrimSpace(customPrompt) == "" {
-		return defaultAIPrompt
-	}
-
-	return customPrompt
-}
-
 // loadCustomPrompt loads a custom prompt from the custom-instructions folder
+// processDirectory recursively processes all files in a directory
+func processDirectory(dirPath string) (string, error) {
+	var result []string
+
+	err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		
+		// Skip the root directory itself
+		if path == dirPath {
+			return nil
+		}
+
+		if info.IsDir() {
+			// For directories, add directory tag
+			relPath, err := filepath.Rel(dirPath, path)
+			if err != nil {
+				return err
+			}
+			result = append(result, fmt.Sprintf("<directory name=\"%s\" path=\"%s\">\n", info.Name(), relPath))
+		} else {
+			// For files, add context tag with content
+			content, err := utils.ReadFileContent(path)
+			if err != nil {
+				return fmt.Errorf("error reading file %s: %v", path, err)
+			}
+			relPath, err := filepath.Rel(dirPath, path)
+			if err != nil {
+				return err
+			}
+			result = append(result, fmt.Sprintf("<context file=\"%s\">\n%s\n</context>\n", relPath, content))
+		}
+		return nil
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return strings.Join(result, "\n"), nil
+}
+
 func loadCustomPrompt(promptName string) (string, error) {
 	// Construct the path to the custom prompt file
 	customPromptPath := fmt.Sprintf(".git-commit/custom-instructions/%s.md", promptName)
@@ -106,4 +69,75 @@ func loadCustomPrompt(promptName string) (string, error) {
 	}
 
 	return string(content), nil
+}
+
+// ProcessMarkdownDirectives processes special directives in markdown content
+func ProcessMarkdownDirectives(content string) (string, error) {
+	lines := strings.Split(content, "\n")
+	var result []string
+
+	for _, line := range lines {
+		if strings.Contains(line, "@context:") {
+			// Extract file path after @context:
+			filePath := strings.TrimSpace(strings.Split(line, "@context:")[1])
+			
+			// Get file info to check if it's a directory
+			fileInfo, err := os.Stat(filePath)
+			if err != nil {
+				return "", fmt.Errorf("error getting file info for %s: %v", filePath, err)
+			}
+
+			if fileInfo.IsDir() {
+				// Handle directory recursively
+				dirContent, err := processDirectory(filePath)
+				if err != nil {
+					return "", fmt.Errorf("error processing directory %s: %v", filePath, err)
+				}
+				replacement := fmt.Sprintf("<directory name=\"%s\" path=\"%s\">\n%s</directory>", 
+					fileInfo.Name(), filePath, dirContent)
+				result = append(result, replacement)
+			} else {
+				// Handle single file
+				fileContent, err := utils.ReadFileContent(filePath)
+				if err != nil {
+					return "", fmt.Errorf("error reading context file %s: %v", filePath, err)
+				}
+				replacement := fmt.Sprintf("<context file=\"%s\">\n%s\n</context>", filePath, fileContent)
+				result = append(result, replacement)
+			}
+		} else if strings.Contains(line, "@diff") {
+			diffOutput := diff.GetDiffOutputWithoutIgnoresFiles()
+			result = append(result, diffOutput)
+		} else {
+			result = append(result, line)
+		}
+	}
+
+	return strings.Join(result, "\n"), nil
+}
+
+// GetAIPrompt returns the AI prompt (standard or custom) with context files processed
+func GetAIPrompt(promptName string) string {
+	var rawPrompt string
+	
+	// If a specific prompt name is provided, try to load it from custom-instructions
+	if promptName != "" {
+		customPrompt, err := loadCustomPrompt(promptName)
+		if err != nil {
+			fmt.Printf("Error reading custom prompt '%s': %v, using standard\n", promptName, err)
+			rawPrompt = ""
+		} else if strings.TrimSpace(customPrompt) != "" {
+			rawPrompt = customPrompt
+		} else {
+			rawPrompt = ""
+		}
+	}
+	
+	processedPrompt, err := ProcessMarkdownDirectives(rawPrompt)
+	if err != nil {
+		fmt.Printf("Error processing prompt directives: %v\n", err)
+		return rawPrompt
+	}
+	
+	return processedPrompt
 }
