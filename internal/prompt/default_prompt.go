@@ -1,4 +1,4 @@
-package defaultprompt
+package prompt
 
 import (
 	"fmt"

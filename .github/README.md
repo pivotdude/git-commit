@@ -3,21 +3,25 @@
 ## CI Workflow (`.github/workflows/ci.yml`)
 
 **Triggers:**
+
 - Push to `master` branch
 - Pull request to `master` branch
 
 **What it does:**
+
 - Sets up Go 1.24.6
 - Caches Go modules for faster builds
-- Builds the application: `go build -v -o git-commit ./main.go`
+- Builds the application: `go build -v -o git-commit ./cmd/git-commit`
 - Runs tests: `go test -v ./...`
 
 ## Release Workflow (`.github/workflows/release.yml`)
 
 **Triggers:**
+
 - Release publication (GitHub Release)
 
 **What it does:**
+
 - Builds binaries for the following platforms:
   - **Linux**: amd64, arm64
   - **Windows**: amd64 (with .exe extension)

@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"git-commit/utils"
+	"git-commit/pkg/utils"
 )
 
 // parseGitDiffIgnore reads the ignore file from .git-commit and returns a list of patterns to ignore

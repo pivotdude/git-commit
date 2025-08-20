@@ -2,8 +2,8 @@ package prompt
 
 import (
 	"fmt"
-	"git-commit/diff"
-	"git-commit/utils"
+	"git-commit/internal/diff"
+	"git-commit/pkg/utils"
 	"os"
 	"path/filepath"
 	"strings"

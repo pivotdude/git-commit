@@ -3,7 +3,7 @@ package diff
 import (
 	"bytes"
 	"fmt"
-	"git-commit/git"
+	"git-commit/internal/git"
 	"log"
 	"os"
 	"os/exec"
